@@ -1,0 +1,78 @@
+api:
+  enabled: true
+  address: "0.0.0.0:8686"
+  playground: true
+
+sources:
+  docker:
+    type: docker_logs
+    auto_partial_merge: true
+    docker_host: unix:///var/run/docker.sock
+    exclude_containers:
+      - exclude_
+    partial_event_marker_field: _partial
+    retry_backoff_secs: 2
+
+  metrics:
+    type: host_metrics
+
+  logs:
+    type: file
+    include:
+      - /var/log/**/*.log
+    exclude:
+      - fct_uninstall.log
+      - fsck_*.log
+      - launchd.log
+      - nix-daemon.log
+      - shutdown_monitor.log
+      - wifi.log
+    read_from: beginning
+
+transforms:
+  dedupe:
+    type: dedupe
+    inputs:
+      - docker
+      - logs
+    cache:
+      num_events: 5000
+
+sinks:
+  console:
+    type: console
+    inputs:
+      - dedupe
+    encoding:
+      codec: json
+
+  loki:
+    type: loki
+    inputs:
+      - dedupe
+    encoding:
+      codec: json
+    batch:
+      max_events: 10000
+    labels:
+      file: "{{ file }}"
+      stream: "{{ stream }}"
+    endpoint: http://gateway:3100
+    out_of_order_action: accept
+    remove_timestamp: false
+    tenant_id: tenant1
+
+  # redis:
+  #   type: redis
+  #   inputs:
+  #     - dedupe
+  #   encoding:
+  #     codec: json
+  #   endpoint: redis://127.0.0.1:6379/0
+  #   key: vector
+
+  prometheus:
+    type: prometheus_exporter
+    inputs:
+      - metrics
+    address: 0.0.0.0:9090

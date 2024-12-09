@@ -1,0 +1,41 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'loki'
+    static_configs:
+      - targets:
+        - 'read:3100'
+        - 'write:3100'
+        - 'backend:3100'
+
+  - job_name: 'vector'
+    static_configs:
+      - targets: ['vector:9090']
+
+  - job_name: 'minio'
+    metrics_path: /minio/v2/metrics/cluster
+    scheme: http
+    static_configs:
+      - targets: ['minio:9000']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        regex: '([^:]+):\d+'
+        replacement: '${1}'
+
+  - job_name: 'minio-health'
+    metrics_path: /minio/health/cluster
+    scheme: http
+    static_configs:
+      - targets: ['minio:9000']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        regex: '([^:]+):\d+'
+        replacement: '${1}'

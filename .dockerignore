@@ -1,0 +1,28 @@
+# ETC
+schema.json
+scratch.*
+*.md
+
+# Git
+.git
+.gitignore
+
+# Data directories
+*-data/
+grafana-data/
+prometheus-data/
+loki-data/
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.*
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Editor directories
+.vscode/
