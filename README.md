@@ -14,7 +14,7 @@ Observability using vector, loki, prometheus, grafana, and minio.
   * Prometheus: [http://localhost:9090](http://localhost:9090)
   * Minio: [http://localhost:9000](http://localhost:9000) (default creds: `loki`/`supersecret`)
   * Loki: [http://localhost:3100](http://localhost:3100)
-  * Vector: [http://localhost:8686](http://localhost:8686)
+  * Vector: [http://localhost:8686/playground](http://localhost:8686/playground)
 
 ## TODO
 
