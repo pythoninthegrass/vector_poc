@@ -55,20 +55,20 @@
 
     - name: Copy configuration files
       ansible.builtin.copy:
-        src: "{{ item.src }}"
+        src: "{{ playbook_dir }}/config/{{ item.src }}"
         dest: "{{ config_dir }}/{{ item.dest }}"
         mode: '0644'
       loop:
-        - { src: alertmanager.yml, dest: alertmanager/alertmanager.yml }
-        - { src: grafana.ini, dest: grafana/grafana.ini }
-        - { src: dashboard.yml, dest: grafana/provisioning/dashboards.yml }
-        - { src: datasource.yml, dest: grafana/provisioning/datasources.yml }
-        - { src: sample-dashboard.json, dest: grafana/dashboards/vector-metrics.json }
-        - { src: config.yml, dest: loki/config.yml }
-        - { src: init.sh, dest: minio/init.sh }
-        - { src: nginx.conf, dest: nginx/nginx.conf }
-        - { src: prometheus.yml, dest: prometheus/prometheus.yml }
-        - { src: vector.yml, dest: vector/vector.yml }
+        - { src: "alertmanager/alertmanager.yml", dest: "alertmanager/alertmanager.yml" }
+        - { src: "grafana/grafana.ini", dest: "grafana/grafana.ini" }
+        - { src: "grafana/provisioning/dashboards/dashboard.yml", dest: "grafana/provisioning/dashboards.yml" }
+        - { src: "grafana/provisioning/datasources/datasource.yml", dest: "grafana/provisioning/datasources.yml" }
+        - { src: "grafana/dashboards/sample-dashboard.json", dest: "grafana/dashboards/vector-metrics.json" }
+        - { src: "loki/config.yml", dest: "loki/config.yml" }
+        - { src: "minio/init.sh", dest: "minio/init.sh" }
+        - { src: "nginx/nginx.conf", dest: "nginx/nginx.conf" }
+        - { src: "prometheus/prometheus.yml", dest: "prometheus/prometheus.yml" }
+        - { src: "vector/vector.yml", dest: "vector/vector.yml" }
       become: true
 
     - name: Set execute permission on init.sh
