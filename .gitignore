@@ -1,5 +1,7 @@
 # ETC
 *schema.json
+facts/*
+roles/*
 
 # General
 .DS_Store
