@@ -48,12 +48,38 @@ packages:
   - vim
   - wget
 
+users:
+  - name: ubuntu
+    sudo: [ALL=(ALL) NOPASSWD:ALL]
+    gecos: Ubuntu
+    home: /home/ubuntu
+    groups: [admin, users, wheel]
+    shell: /bin/bash
+    lock_passwd: true
+    ssh_import_id:
+      - gh:pythoninthegrass
+    ssh_authorized_keys:
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDIUQ//QOZBVOyG9ieqMG2vVVP7KMI0B9DIyXE4PioCTaw1P2/oGRcqr0pAmqrxtO7ADNcFSwW5hdAr9L4KGc+CUns/nZ16M1fhfuW6tVnYGaSgwGYCIU1DCJ+ofvdWJOkAAmvui9w6g5VgwxdC2V27lITgy57E9XwO16diywrKMT9M5sypX51nVQOgeDJR8fO8LaT0kWuBtOtOuFNaZzD0eHiciojM95alIbJthCT10fvTGVOQGdODzIuKlVQjIqOZ78qFNB0E9rfeTuLgdZ5CRrFqkDfaCYMwgNWmzBt3YnomnhndpuqwftRdOoNi2FmJegZDp5prDOTisfB6r4TJriWq165hF9M8RKOqyyq0C0+h7+UXlhhZk4WWEOVsSTAx2MlFMdk9UrOMdqq2dqFZfaWSPRvM8m8JugTXloYhoK/nderzTa2qoKJCZadJG+ul+wQJpS/dqItnGowcO7mgFSsxMhuCJbxWjFpjwvZkVBLl60f9l2FU1/515onFwz0= lance.stephens@mbp.local
+    no_ssh_fingerprints: true
+
+  - name: ansible
+    plain_text_passwd: 'ansible'
+    sudo: [ALL=(ALL) NOPASSWD:ALL]
+    gecos: Ansible
+    home: /home/ansible
+    groups: [admin, users, wheel]
+    shell: /bin/bash
+    lock_passwd: true
+    ssh_import_id:
+      - gh:pythoninthegrass
+    ssh_authorized_keys:
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDIUQ//QOZBVOyG9ieqMG2vVVP7KMI0B9DIyXE4PioCTaw1P2/oGRcqr0pAmqrxtO7ADNcFSwW5hdAr9L4KGc+CUns/nZ16M1fhfuW6tVnYGaSgwGYCIU1DCJ+ofvdWJOkAAmvui9w6g5VgwxdC2V27lITgy57E9XwO16diywrKMT9M5sypX51nVQOgeDJR8fO8LaT0kWuBtOtOuFNaZzD0eHiciojM95alIbJthCT10fvTGVOQGdODzIuKlVQjIqOZ78qFNB0E9rfeTuLgdZ5CRrFqkDfaCYMwgNWmzBt3YnomnhndpuqwftRdOoNi2FmJegZDp5prDOTisfB6r4TJriWq165hF9M8RKOqyyq0C0+h7+UXlhhZk4WWEOVsSTAx2MlFMdk9UrOMdqq2dqFZfaWSPRvM8m8JugTXloYhoK/nderzTa2qoKJCZadJG+ul+wQJpS/dqItnGowcO7mgFSsxMhuCJbxWjFpjwvZkVBLl60f9l2FU1/515onFwz0= lance.stephens@mbp.local
+    no_ssh_fingerprints: true
+
 runcmd:
-  - wget -O - https://github.com/pythoninthegrass.keys | sudo tee -a /home/ubuntu/.ssh/authorized_keys
-  - ssh-keyscan github.com >> /home/ubuntu/.ssh/known_hosts
+  - mkdir -p /home/ubuntu/.ssh
   - mkdir -p /home/ubuntu/git
-  - chmod -R 0777 /home/ubuntu/git
-  - chown -R ubuntu:ubuntu /home/ubuntu/git
+  - ssh-keyscan github.com >> /home/ubuntu/.ssh/known_hosts
   - apt-get update
   - apt-get install -y python3.11=3.11.11-1+jammy1 python3.11-dev=3.11.11-1+jammy1
 
@@ -119,5 +145,12 @@ write_files:
   - path: '/etc/sysctl.d/enabled_ipv4_forwarding.conf'
     content: |
       net.ipv4.conf.all.forwarding=1
+
+bootcmd:
+  - cloud-init-per once chmod -R 0777 /home/ubuntu
+  - cloud-init-per once chown -R ubuntu:ubuntu /home/ubuntu
+  - cloud-init-per once touch /var/log/ansible.log
+  - cloud-init-per once chmod 0777 /var/log/ansible.log
+  - cloud-init-per once chown ansible:ansible /var/log/ansible.log
 
 final_message: "The system is finally up, after $UPTIME seconds"
