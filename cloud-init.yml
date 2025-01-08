@@ -6,6 +6,10 @@ output: {all: '| tee -a /var/log/cloud-init.log'}   # store logs inside vm
 timezone: "America/Chicago"
 
 hostname: ubuntu
+create_hostname_file: true
+manage_etc_hosts: localhost
+fqdn: ubuntu.local
+prefer_fqdn_over_hostname: false
 
 package_update: true      # default: true
 package_upgrade: true     # default: false
