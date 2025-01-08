@@ -1,0 +1,130 @@
+#cloud-config
+# vim: syntax=yaml
+
+output: {all: '| tee -a /var/log/cloud-init.log'}   # store logs inside vm
+
+timezone: "America/Chicago"
+
+hostname: ubuntu
+
+package_update: true      # default: true
+package_upgrade: true     # default: false
+# https://github.com/number5/cloud-init/blob/main/doc/examples/cloud-config-apt.txt#L21
+apt_get_command: [
+  "env",
+  "DEBIAN_FRONTEND=noninteractive",
+  "apt-get",
+  "--option=Dpkg::Options::=--force-confold",
+  "--option=Dpkg::options::=--force-unsafe-io",
+  "--assume-yes",
+  "--quiet",
+  "--no-install-recommends"
+]
+
+apt:
+  sources:
+    deadsnakes:
+      source: deb https://ppa.launchpadcontent.net/deadsnakes/ppa/ubuntu $RELEASE main
+      keyid: F23C5A6CF475977595C89F51BA6932366A755776
+
+packages:
+  - ansible
+  - apt-transport-https
+  - bat
+  - build-essential
+  - ca-certificates
+  - cloud-init
+  - curl
+  - gnupg-agent
+  - net-tools
+  - python3
+  - python3-pip
+  - software-properties-common
+  - tree
+  - vim
+  - wget
+
+# groups:
+
+# users:
+
+runcmd:
+  - wget -O - https://github.com/pythoninthegrass.keys | sudo tee -a /home/ubuntu/.ssh/authorized_keys
+  - ssh-keyscan github.com >> /home/ubuntu/.ssh/known_hosts
+  - mkdir -p /home/ubuntu/git
+  - chmod -R 0777 /home/ubuntu/git
+  - chown -R ubuntu:ubuntu /home/ubuntu/git
+  - apt-get update
+  - apt-get install -y python3.11=3.11.11-1+jammy1 python3.11-dev=3.11.11-1+jammy1
+
+# ssh:
+#   emit_keys_to_console: false
+
+# ssh_authorized_keys:
+
+write_files:
+  - path: '/home/ubuntu/.bashrc'
+    owner: 'ubuntu:ubuntu'
+    permissions: '0644'
+    append: false
+    defer: true
+    content: |
+      # Verify that shell is interactive
+      if [[ $- != *i* ]]; then return; fi
+
+      alias update='sudo apt update && sudo apt upgrade -y && sudo apt dist-upgrade -y && sudo apt autoremove -y && sudo apt auto-clean'
+      alias python='python3.11'
+      alias ll='ls -FGlAhp'
+      alias mkdir='mkdir -pv'
+      alias ..='cd ../'
+      alias ...='cd ../../'
+      cd() { builtin cd "$@"; ll; }
+
+      HISTCONTROL=ignoreboth
+      shopt -s histappend
+      HISTSIZE=ubuntu
+      HISTFILESIZE=2000
+
+      # Forward search in bash (step forward via ctrl-s)
+      stty -ixon
+
+      shopt -s checkwinsize
+
+      if [ -z "${debian_chroot:-}" ] && [ -r /etc/debian_chroot ]; then
+          debian_chroot=$(cat /etc/debian_chroot)
+      fi
+
+      case "$TERM" in
+        xterm-color|*-256color) color_prompt=yes;;
+      esac
+
+      if [ "$color_prompt" = yes ]; then
+          PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\] \nλ '
+      else
+          PS1='${debian_chroot:+($debian_chroot)}\u@\h:\w \nλ '
+      fi
+      unset color_prompt force_color_prompt
+
+      case "$TERM" in
+      xterm*|rxvt*)
+          PS1="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]$PS1"
+          ;;
+      *)
+          ;;
+      esac
+
+  - path: '/home/ubuntu/.bash_profile'
+    owner: 'ubuntu:ubuntu'
+    permissions: '0644'
+    append: false
+    defer: true
+    content: |
+      [[ -s ~/.bashrc ]] && source ~/.bashrc
+
+  - path: '/etc/sysctl.d/enabled_ipv4_forwarding.conf'
+    content: |
+      net.ipv4.conf.all.forwarding=1
+
+# bootcmd:
+
+final_message: "The system is finally up, after $UPTIME seconds"
