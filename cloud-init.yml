@@ -44,10 +44,6 @@ packages:
   - vim
   - wget
 
-# groups:
-
-# users:
-
 runcmd:
   - wget -O - https://github.com/pythoninthegrass.keys | sudo tee -a /home/ubuntu/.ssh/authorized_keys
   - ssh-keyscan github.com >> /home/ubuntu/.ssh/known_hosts
@@ -56,11 +52,6 @@ runcmd:
   - chown -R ubuntu:ubuntu /home/ubuntu/git
   - apt-get update
   - apt-get install -y python3.11=3.11.11-1+jammy1 python3.11-dev=3.11.11-1+jammy1
-
-# ssh:
-#   emit_keys_to_console: false
-
-# ssh_authorized_keys:
 
 write_files:
   - path: '/home/ubuntu/.bashrc'
@@ -124,7 +115,5 @@ write_files:
   - path: '/etc/sysctl.d/enabled_ipv4_forwarding.conf'
     content: |
       net.ipv4.conf.all.forwarding=1
-
-# bootcmd:
 
 final_message: "The system is finally up, after $UPTIME seconds"
