@@ -144,15 +144,15 @@ write_files:
     append: false
     defer: true
     content: |
+      # Linuxbrew shellenv (this should come first)
+      [ -f "/home/linuxbrew/.linuxbrew/bin/brew" ] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+
       # $PATH
-      export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.asdf/bin:$HOME/.asdf/shims:$HOME/.linuxbrew/bin:$PATH"
+      export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$HOME/.asdf/bin:$HOME/.asdf/shims:$PATH"
 
       # set default text editor
       # * if this fails on ubuntu, try `select-editor`
       export EDITOR=vim
-
-      # linuxbrew
-      [ -f "/home/linuxbrew/.linuxbrew/bin/brew" ] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 
   - path: '/home/ubuntu/.bash_profile'
     owner: 'ubuntu:ubuntu'
