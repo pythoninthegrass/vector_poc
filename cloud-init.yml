@@ -29,6 +29,7 @@ apt:
 packages:
   - apt-transport-https
   - bat
+  - bind9-dnsutils
   - build-essential
   - ca-certificates
   - cloud-init
@@ -78,17 +79,6 @@ ansible:
     actions:
       - ["ansible-galaxy", "collection", "install", "community.general"]
       - ["ansible-galaxy", "collection", "install", "community.docker"]
-
-runcmd:
-  - mkdir -p /home/ubuntu/.ssh
-  - mkdir -p /home/ubuntu/git
-  - ssh-keyscan github.com >> /home/ubuntu/.ssh/known_hosts
-  - apt-get update
-  - apt-get install -y software-properties-common
-  - add-apt-repository -y ppa:deadsnakes/ppa
-  - apt-get update
-  - apt-get install -y python3.11 python3.11-dev
-  - python3.11 -m pip install poetry
 
 write_files:
   - path: '/home/ubuntu/.bashrc'
@@ -168,6 +158,39 @@ write_files:
   - path: '/etc/sysctl.d/enabled_ipv4_forwarding.conf'
     content: |
       net.ipv4.conf.all.forwarding=1
+
+  - path: '/etc/cloud/cloud.cfg.d/99-disable-network-config.cfg'
+    owner: 'root:root'
+    permissions: '0644'
+    content: |
+      network: {config: disabled}
+
+  - path: '/etc/netplan/50-cloud-init.yaml'
+    owner: 'root:root'
+    permissions: '0644'
+    append: false
+    content: |
+      network:
+        version: 2
+        ethernets:
+          eth0:
+            dhcp4: true
+            match:
+              name: eth*
+            set-name: eth0
+            nameservers:
+              addresses: [1.1.1.1, 1.0.0.1]
+
+runcmd:
+  - mkdir -p /home/ubuntu/.ssh
+  - mkdir -p /home/ubuntu/git
+  - ssh-keyscan github.com >> /home/ubuntu/.ssh/known_hosts
+  - apt-get update
+  - apt-get install -y software-properties-common
+  - add-apt-repository -y ppa:deadsnakes/ppa
+  - apt-get update
+  - apt-get install -y python3.11 python3.11-dev
+  - python3.11 -m pip install poetry
 
 bootcmd:
   - cloud-init-per once chmod -R 0777 /home/ubuntu
