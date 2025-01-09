@@ -13,27 +13,20 @@ prefer_fqdn_over_hostname: false
 
 package_update: true      # default: true
 package_upgrade: true     # default: false
-# https://github.com/number5/cloud-init/blob/main/doc/examples/cloud-config-apt.txt#L21
-apt_get_command: [
-  "env",
-  "DEBIAN_FRONTEND=noninteractive",
-  "apt-get",
-  "--option=Dpkg::Options::=--force-confold",
-  "--option=Dpkg::options::=--force-unsafe-io",
-  "--assume-yes",
-  "--quiet",
-  "--no-install-recommends"
-]
 
 apt:
+  conf: |
+    APT::Get::Assume-Yes "true";
+    APT::Get::Show-Progress "false";
+    APT::Get::Install-Recommends "false";
+    Dpkg::Options::="--force-confold";
+    Dpkg::Options::="--force-unsafe-io";
   sources:
     deadsnakes:
       source: deb https://ppa.launchpadcontent.net/deadsnakes/ppa/ubuntu $RELEASE main
       keyid: F23C5A6CF475977595C89F51BA6932366A755776
 
 packages:
-  - ansible
-  - ansible-lint
   - apt-transport-https
   - bat
   - build-essential
@@ -47,45 +40,55 @@ packages:
   - python3-pip
   - software-properties-common
   - ssh
+  - ssh-import-id
   - tree
   - ufw
   - vim
   - wget
 
 users:
+  - default
+
   - name: ubuntu
-    sudo: [ALL=(ALL) NOPASSWD:ALL]
-    gecos: Ubuntu
-    home: /home/ubuntu
-    groups: [admin, users, wheel]
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: [adm, admin, users, wheel]
     shell: /bin/bash
     lock_passwd: true
     ssh_import_id:
       - gh:pythoninthegrass
     ssh_authorized_keys:
       - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDIUQ//QOZBVOyG9ieqMG2vVVP7KMI0B9DIyXE4PioCTaw1P2/oGRcqr0pAmqrxtO7ADNcFSwW5hdAr9L4KGc+CUns/nZ16M1fhfuW6tVnYGaSgwGYCIU1DCJ+ofvdWJOkAAmvui9w6g5VgwxdC2V27lITgy57E9XwO16diywrKMT9M5sypX51nVQOgeDJR8fO8LaT0kWuBtOtOuFNaZzD0eHiciojM95alIbJthCT10fvTGVOQGdODzIuKlVQjIqOZ78qFNB0E9rfeTuLgdZ5CRrFqkDfaCYMwgNWmzBt3YnomnhndpuqwftRdOoNi2FmJegZDp5prDOTisfB6r4TJriWq165hF9M8RKOqyyq0C0+h7+UXlhhZk4WWEOVsSTAx2MlFMdk9UrOMdqq2dqFZfaWSPRvM8m8JugTXloYhoK/nderzTa2qoKJCZadJG+ul+wQJpS/dqItnGowcO7mgFSsxMhuCJbxWjFpjwvZkVBLl60f9l2FU1/515onFwz0= lance.stephens@mbp.local
-    no_ssh_fingerprints: true
 
   - name: ansible
-    plain_text_passwd: 'ansible'
-    sudo: [ALL=(ALL) NOPASSWD:ALL]
-    gecos: Ansible
-    home: /home/ansible
-    groups: [admin, users, wheel]
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: [adm, admin, users, wheel]
     shell: /bin/bash
+    passwd: ansible
     lock_passwd: true
     ssh_import_id:
       - gh:pythoninthegrass
     ssh_authorized_keys:
       - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDIUQ//QOZBVOyG9ieqMG2vVVP7KMI0B9DIyXE4PioCTaw1P2/oGRcqr0pAmqrxtO7ADNcFSwW5hdAr9L4KGc+CUns/nZ16M1fhfuW6tVnYGaSgwGYCIU1DCJ+ofvdWJOkAAmvui9w6g5VgwxdC2V27lITgy57E9XwO16diywrKMT9M5sypX51nVQOgeDJR8fO8LaT0kWuBtOtOuFNaZzD0eHiciojM95alIbJthCT10fvTGVOQGdODzIuKlVQjIqOZ78qFNB0E9rfeTuLgdZ5CRrFqkDfaCYMwgNWmzBt3YnomnhndpuqwftRdOoNi2FmJegZDp5prDOTisfB6r4TJriWq165hF9M8RKOqyyq0C0+h7+UXlhhZk4WWEOVsSTAx2MlFMdk9UrOMdqq2dqFZfaWSPRvM8m8JugTXloYhoK/nderzTa2qoKJCZadJG+ul+wQJpS/dqItnGowcO7mgFSsxMhuCJbxWjFpjwvZkVBLl60f9l2FU1/515onFwz0= lance.stephens@mbp.local
-    no_ssh_fingerprints: true
+
+ansible:
+  install_method: pip
+  package_name: ansible
+  run_user: ansible
+  galaxy:
+    actions:
+      - ["ansible-galaxy", "collection", "install", "community.general"]
+      - ["ansible-galaxy", "collection", "install", "community.docker"]
 
 runcmd:
   - mkdir -p /home/ubuntu/.ssh
   - mkdir -p /home/ubuntu/git
   - ssh-keyscan github.com >> /home/ubuntu/.ssh/known_hosts
   - apt-get update
-  - apt-get install -y python3.11=3.11.11-1+jammy1 python3.11-dev=3.11.11-1+jammy1
+  - apt-get install -y software-properties-common
+  - add-apt-repository -y ppa:deadsnakes/ppa
+  - apt-get update
+  - apt-get install -y python3.11 python3.11-dev
+  - python3.11 -m pip install poetry
 
 write_files:
   - path: '/home/ubuntu/.bashrc'
