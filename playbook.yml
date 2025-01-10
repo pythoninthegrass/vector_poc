@@ -75,12 +75,6 @@
         - { src: "vector/vector.yml", dest: "vector/vector.yml" }
       become: true
 
-    - name: Set execute permission on init.sh
-      ansible.builtin.file:
-        path: "{{ src_dir }}/minio/init.sh"
-        mode: '0755'
-      become: true
-
     # TODO: debug
     - name: Pull Docker images
       community.docker.docker_compose_v2:
