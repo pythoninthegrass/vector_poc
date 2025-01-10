@@ -201,6 +201,19 @@ write_files:
             nameservers:
               addresses: [1.1.1.1, 1.0.0.1]
 
+  - path: '/etc/docker/daemon.json'
+    owner: 'root:root'
+    permissions: '0644'
+    append: false
+    content: |
+      {
+        "log-opts": {
+          "max-size": "100m"
+        },
+        "storage-driver": "vfs",
+        "dns": ["8.8.8.8", "8.8.4.4"]
+      }
+
 runcmd:
   - mkdir -p /home/ubuntu/.ssh
   - mkdir -p /home/ubuntu/git
