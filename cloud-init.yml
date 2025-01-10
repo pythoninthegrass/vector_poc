@@ -107,8 +107,6 @@ write_files:
 
       [ -f ~/.bash_aliases ] && . ~/.bash_aliases
 
-      alias update='sudo apt update && sudo apt upgrade -y && sudo apt dist-upgrade -y && sudo apt autoremove -y && sudo apt auto-clean'
-      alias python='python3.11'
       alias ll='ls -FGlAhp'
       alias mkdir='mkdir -pv'
       alias ..='cd ../'
@@ -157,7 +155,10 @@ write_files:
     append: false
     defer: true
     content: |
-      # Linuxbrew shellenv (this should come first)
+      # check if binary exists
+      check_bin() { command -v "$1" >/dev/null 2>&1; }
+
+      # Linuxbrew shellenv
       [ -f "/home/linuxbrew/.linuxbrew/bin/brew" ] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 
       # $PATH
@@ -166,6 +167,35 @@ write_files:
       # set default text editor
       # * if this fails on ubuntu, try `select-editor`
       export EDITOR=vim
+
+      # aliases
+      alias update='sudo apt update && sudo apt upgrade -y && sudo apt dist-upgrade -y && sudo apt autoremove -y && sudo apt auto-clean'
+      alias python='python3.11'
+
+      # asdf
+      export ASDF_DIR="$HOME/.asdf"
+      [[ -f "$ASDF_DIR/asdf.sh" ]] && . "$ASDF_DIR/asdf.sh"
+
+      # fzf
+      # https://github.com/junegunn/fzf#using-git
+      [[ -f $(check_bin fzf) ]] && eval "$(fzf --bash)"
+
+      # lazydocker
+      # https://github.com/jesseduffield/lazydocker#installation
+      alias lzd="lazydocker"
+
+      # lazygit
+      # https://github.com/jesseduffield/lazygit?tab=readme-ov-file#installation
+      lg() {
+          export LAZYGIT_NEW_DIR_FILE=~/.lazygit/newdir
+
+          lazygit "$@"
+
+          if [ -f $LAZYGIT_NEW_DIR_FILE ]; then
+              cd "$(cat $LAZYGIT_NEW_DIR_FILE)"
+              rm -f $LAZYGIT_NEW_DIR_FILE > /dev/null
+          fi
+      }
 
   - path: '/home/ubuntu/.bash_profile'
     owner: 'ubuntu:ubuntu'
