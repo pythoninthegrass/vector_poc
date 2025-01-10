@@ -86,6 +86,10 @@
       community.docker.docker_compose_v2:
         project_src: "{{ dest_dir }}"
         state: absent
+        remove_orphans: true
+        remove_volumes: true
+      register: teardown_output
+      tags: qa
       register: teardown_output
 
     - name: Show teardown results
