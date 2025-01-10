@@ -1,7 +1,5 @@
 {
   "packages": [
-    "ansible-lint@latest",
-    "ansible@latest",
     "asdf-vm@latest",
     "gh@latest",
     "git@latest",
