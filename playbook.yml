@@ -4,20 +4,19 @@
   any_errors_fatal: true
   gather_facts: true
   vars:
-    project_dir: "{{ ansible_env.HOME }}/.config/logging-stack"
-    config_dir: "{{ project_dir }}/config"
+    src_dir: "{{ playbook_dir }}/config"
+    dest_dir: "/home/{{ ansible_user }}/.config/logging-stack"
     required_dirs:
-      - "{{ project_dir }}"
-      - "{{ config_dir }}"
-      - "{{ config_dir }}/alertmanager"
-      - "{{ config_dir }}/grafana"
-      - "{{ config_dir }}/grafana/dashboards"
-      - "{{ config_dir }}/grafana/provisioning"
-      - "{{ config_dir }}/loki"
-      - "{{ config_dir }}/minio"
-      - "{{ config_dir }}/nginx"
-      - "{{ config_dir }}/prometheus"
-      - "{{ config_dir }}/vector"
+      - "{{ dest_dir }}"
+      - "{{ dest_dir }}/alertmanager"
+      - "{{ dest_dir }}/grafana"
+      - "{{ dest_dir }}/grafana/dashboards"
+      - "{{ dest_dir }}/grafana/provisioning"
+      - "{{ dest_dir }}/loki"
+      - "{{ dest_dir }}/minio"
+      - "{{ dest_dir }}/nginx"
+      - "{{ dest_dir }}/prometheus"
+      - "{{ dest_dir }}/vector"
     pip_install_packages:
       - name: docker
   roles:
@@ -43,21 +42,26 @@
         path: "{{ item }}"
         state: directory
         mode: '0755'
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
       loop: "{{ required_dirs }}"
       become: true
+      become_user: "{{ ansible_user }}"
 
     - name: Copy docker-compose.yml
       ansible.builtin.copy:
         src: docker-compose.yml
-        dest: "{{ project_dir }}/docker-compose.yml"
+        dest: "{{ dest_dir }}/docker-compose.yml"
         mode: '0644'
       become: true
 
     - name: Copy configuration files
       ansible.builtin.copy:
-        src: "{{ playbook_dir }}/config/{{ item.src }}"
-        dest: "{{ config_dir }}/{{ item.dest }}"
+        src: "{{ src_dir }}/{{ item.src }}"
+        dest: "{{ dest_dir }}/{{ item.dest }}"
         mode: '0644'
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
       loop:
         - { src: "alertmanager/alertmanager.yml", dest: "alertmanager/alertmanager.yml" }
         - { src: "grafana/grafana.ini", dest: "grafana/grafana.ini" }
@@ -73,18 +77,20 @@
 
     - name: Set execute permission on init.sh
       ansible.builtin.file:
-        path: "{{ config_dir }}/minio/init.sh"
+        path: "{{ src_dir }}/minio/init.sh"
         mode: '0755'
       become: true
 
+    # TODO: debug
     - name: Pull Docker images
       community.docker.docker_compose_v2:
-        project_src: "{{ project_dir }}"
-        pull: true
+        project_src: "{{ dest_dir }}"
+        pull: missing
+      tags: qa
 
     - name: Stop any existing services
       community.docker.docker_compose_v2:
-        project_src: "{{ project_dir }}"
+        project_src: "{{ dest_dir }}"
         state: absent
       register: teardown_output
 
@@ -95,7 +101,7 @@
 
     - name: Create and start services
       community.docker.docker_compose_v2:
-        project_src: "{{ project_dir }}"
+        project_src: "{{ dest_dir }}"
         state: present
       register: startup_output
 
