@@ -90,6 +90,8 @@ write_files:
       # Verify that shell is interactive
       if [[ $- != *i* ]]; then return; fi
 
+      [ -f ~/.bash_aliases ] && . ~/.bash_aliases
+
       alias update='sudo apt update && sudo apt upgrade -y && sudo apt dist-upgrade -y && sudo apt autoremove -y && sudo apt auto-clean'
       alias python='python3.11'
       alias ll='ls -FGlAhp'
