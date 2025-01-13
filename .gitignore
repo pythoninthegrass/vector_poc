@@ -1,5 +1,6 @@
 # ETC
 *schema.json
+**/.vagrant*/
 facts/*
 roles/*
 
