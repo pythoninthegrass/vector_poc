@@ -1,0 +1,57 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  vars:
+    project_dir: "{{ ansible_env.HOME }}/.config/logging-stack"
+    config_dir: "{{ project_dir }}/config"
+  tasks:
+    - name: Verify required directories exist
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: dir_check
+      loop:
+        - "{{ config_dir }}/alertmanager"
+        - "{{ config_dir }}/grafana"
+        - "{{ config_dir }}/loki"
+        - "{{ config_dir }}/minio"
+        - "{{ config_dir }}/nginx"
+        - "{{ config_dir }}/prometheus"
+        - "{{ config_dir }}/vector"
+      failed_when: not dir_check.stat.exists or not dir_check.stat.isdir
+
+    - name: Verify docker-compose.yml exists
+      ansible.builtin.stat:
+        path: "{{ project_dir }}/docker-compose.yml"
+      register: compose_file
+      failed_when: not compose_file.stat.exists
+
+    - name: Get running containers
+      community.docker.docker_compose_v2:
+        project_src: "{{ project_dir }}"
+        state: present
+      register: containers
+
+    - name: Verify all services are running
+      ansible.builtin.assert:
+        that: item.State == 'running'
+        fail_msg: "Service {{ item.Service }} is not running"
+        success_msg: "Service {{ item.Service }} is running"
+      loop: "{{ containers.containers }}"
+      loop_control:
+        label: "{{ item.Service }}"
+
+    - name: Check service health endpoints
+      ansible.builtin.uri:
+        url: "http://localhost:{{ item.port }}{{ item.path }}"
+        method: GET
+        status_code: 200
+        validate_certs: false
+      register: health_check
+      loop:
+        - { port: 3000, path: '/api/health', service: 'Grafana' }
+        - { port: 9090, path: '/-/healthy', service: 'Prometheus' }
+        - { port: 9093, path: '/-/healthy', service: 'Alertmanager' }
+        - { port: 3100, path: '/ready', service: 'Loki Gateway' }
+      loop_control:
+        label: "{{ item.service }}"

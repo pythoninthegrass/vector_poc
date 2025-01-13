@@ -17,6 +17,8 @@ includes:
     aliases: ["orb"]
   poetry:
     taskfile: ./taskfiles/poetry.yml
+  vagrant:
+    taskfile: ./taskfiles/vagrant.yml
 
 tasks:
   default:
@@ -32,6 +34,7 @@ tasks:
     silent: true
     env:
       FORCE: 1
+      INSTALL_DIR: "{{.HOME}}/.local/bin" # TODO: missed by install script
     status:
       - command -v devbox 2>/dev/null
 

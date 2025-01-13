@@ -1,0 +1,48 @@
+# Environment variables with defaults
+TART_IMAGE = ENV['TART_IMAGE'] || 'ghcr.io/cirruslabs/ubuntu:latest'
+TART_VM_NAME = ENV['TART_VM_NAME'] || 'ubuntu-amd64'
+TART_GUI = ENV.fetch('TART_GUI', 'false').downcase == 'true'
+TART_CPUS = ENV['TART_CPUS']&.to_i || 3
+TART_MEMORY = ENV['TART_MEMORY']&.to_i || 1024
+TART_DISK = ENV['TART_DISK']&.to_i || 20
+TART_DISPLAY = ENV['TART_DISPLAY'] || '1024x768'
+TART_SUSPENDABLE = ENV.fetch('TART_SUSPENDABLE', 'false').downcase == 'true'
+
+# SSH Configuration
+SSH_USERNAME = ENV['SSH_USERNAME'] || 'ubuntu'
+SSH_PASSWORD = ENV['SSH_PASSWORD'] || 'ubuntu'
+
+# Synced Folders Configuration
+SYNCED_FOLDER_ENABLED = ENV.fetch('SYNCED_FOLDER_ENABLED', 'true').downcase == 'true'
+SYNCED_FOLDER_HOST_PATH = ENV['SYNCED_FOLDER_HOST_PATH'] || '.'
+SYNCED_FOLDER_GUEST_PATH = ENV['SYNCED_FOLDER_GUEST_PATH'] || '/mnt/ansible'
+
+Vagrant.configure("2") do |config|
+  config.vm.provider "tart" do |tart|
+    # Required settings
+    tart.image = TART_IMAGE
+    tart.name = TART_VM_NAME
+
+    # Optional settings
+    tart.gui = TART_GUI
+    tart.cpus = TART_CPUS
+    tart.memory = TART_MEMORY
+    tart.disk = TART_DISK
+    tart.display = TART_DISPLAY
+    tart.suspendable = TART_SUSPENDABLE
+  end
+
+  # Disable default synced folder
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+
+  # Configure custom synced folder
+  if SYNCED_FOLDER_ENABLED
+    config.vm.synced_folder SYNCED_FOLDER_HOST_PATH,
+                           SYNCED_FOLDER_GUEST_PATH,
+                           disabled: false
+  end
+
+  # SSH Configuration
+  config.ssh.username = SSH_USERNAME
+  config.ssh.password = SSH_PASSWORD
+end

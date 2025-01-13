@@ -75,12 +75,10 @@
         - { src: "vector/vector.yml", dest: "vector/vector.yml" }
       become: true
 
-    # TODO: debug
     - name: Pull Docker images
       community.docker.docker_compose_v2:
         project_src: "{{ dest_dir }}"
         pull: missing
-      tags: qa
 
     - name: Stop any existing services
       community.docker.docker_compose_v2:
@@ -90,23 +88,25 @@
         remove_volumes: true
       register: teardown_output
       tags: qa
-      register: teardown_output
 
     - name: Show teardown results
       ansible.builtin.debug:
         var: teardown_output
         verbosity: 1
+      tags: qa
 
     - name: Create and start services
       community.docker.docker_compose_v2:
         project_src: "{{ dest_dir }}"
         state: present
       register: startup_output
+      tags: qa
 
     - name: Show startup results
       ansible.builtin.debug:
         var: startup_output
         verbosity: 1
+      tags: qa
 
     - name: Verify services are running
       ansible.builtin.assert:
@@ -116,6 +116,7 @@
       loop: "{{ startup_output.containers }}"
       loop_control:
         label: "{{ item.Service }}"
+      tags: qa
 
     - name: Wait for services to be healthy
       ansible.builtin.uri:
@@ -134,3 +135,4 @@
         - { port: 3100, path: '/ready', service: 'Loki Gateway' }
       loop_control:
         label: "{{ item.service }}"
+      tags: qa

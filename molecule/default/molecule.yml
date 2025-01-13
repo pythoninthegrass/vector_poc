@@ -1,0 +1,42 @@
+---
+dependency:
+  name: galaxy
+  options:
+    requirements-file: requirements.yml
+driver:
+  name: docker
+  options:
+    platform: linux/amd64
+# TODO: systemd in docker image
+# ! or switch to vagrant driver
+platforms:
+  - name: instance
+    image: geerlingguy/docker-ubuntu2204-ansible:latest
+    platform: linux/amd64
+    pre_build_image: true
+    pull: true
+    privileged: true
+    cgroupns_mode: host
+    command: /usr/sbin/init
+    command_handling: compatibility
+    platform_args:
+      - --platform=linux/amd64
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:rw
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      interpreter_python: /usr/bin/python3
+  destroy_strategy: never
+verifier:
+  name: ansible
+scenario:
+  test_sequence:
+    - dependency
+    - syntax
+    - create
+    - prepare
+    - converge
+    - idempotence
+    - verify
