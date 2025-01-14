@@ -6,15 +6,18 @@ api:
 sources:
   docker:
     type: docker_logs
+    docker_host: "unix:///var/run/docker.sock"
     auto_partial_merge: true
-    docker_host: unix:///var/run/docker.sock
-    exclude_containers:
-      - exclude_
-    partial_event_marker_field: _partial
-    retry_backoff_secs: 2
+    partial_event_marker_field: "_partial"
+    retry_backoff_secs: 1
+    include_containers: ["*"]
+    include_images: ["*"]
 
   metrics:
     type: host_metrics
+    filesystem:
+      devices:
+        excludes: ["^/dev/loop[0-9]+$"]
 
   logs:
     type: file
@@ -28,51 +31,67 @@ sources:
       - shutdown_monitor.log
       - wifi.log
     read_from: beginning
+    ignore_older_secs: 86400
 
 transforms:
-  dedupe:
-    type: dedupe
+  parse_logs:
+    type: remap
     inputs:
       - docker
       - logs
+    source: |
+      . = parse_json(.message) ?? .
+      if exists(.timestamp) {
+        .timestamp = parse_timestamp!(.timestamp, format: "%+")
+      } else {
+        .timestamp = now()
+      }
+      .container_name = .container_name || "unknown"
+      .image = .image || "unknown"
+      if exists(.level) {
+        .level = downcase(string!(.level))
+      } else {
+        .level = "info"
+      }
+
+  dedupe:
+    type: dedupe
+    inputs:
+      - parse_logs
     cache:
       num_events: 5000
 
 sinks:
-  console:
-    type: console
-    inputs:
-      - dedupe
-    encoding:
-      codec: json
-
   loki:
     type: loki
     inputs:
       - dedupe
+    endpoint: "http://gateway:3100"
     encoding:
       codec: json
-    batch:
-      max_events: 10000
     labels:
-      file: "{{ file }}"
-      stream: "{{ stream }}"
-    endpoint: http://gateway:3100
-    out_of_order_action: accept
+      container: '{{ container_name }}'
+      source: '{{ source_type }}'
+      level: '{{ level }}'
     remove_timestamp: false
-    tenant_id: tenant1
-
-  # redis:
-  #   type: redis
-  #   inputs:
-  #     - dedupe
-  #   encoding:
-  #     codec: json
-  #   endpoint: redis://127.0.0.1:6379/0
-  #   key: vector
+    out_of_order_action: accept
+    tenant_id: "default"
+    batch:
+      max_events: 1000
+      timeout_secs: 1
+    healthcheck:
+      enabled: true
+      uri_path: "/ready"
+    request:
+      retry_attempts: 3
+      retry_initial_backoff_secs: 1
+      retry_max_backoff_secs: 10
+      retry_max_duration_secs: 60
+      timeout_secs: 30
 
   prometheus:
     type: prometheus_exporter
     inputs:
       - metrics
-    address: 0.0.0.0:9090
+    address: "0.0.0.0:9090"
+    default_namespace: "vector_metrics"

@@ -143,8 +143,10 @@ services:
     networks:
       - loki
     depends_on:
-      - read
-      - write
+      read:
+        condition: service_healthy
+      write:
+        condition: service_healthy
     logging: *default_logging
 
   backend:
@@ -155,7 +157,10 @@ services:
       - ./config/loki/config.yml:/etc/loki/config.yml
       - loki_data:/loki
     depends_on:
-      - gateway
+      read:
+        condition: service_healthy
+      write:
+        condition: service_healthy
     networks:
       - loki
     logging: *default_logging
@@ -166,6 +171,7 @@ services:
     command: --config /etc/vector/vector.yml
     ports:
       - "8686:8686"
+      - "9598:9598"
     volumes:
       - ./config/vector:/etc/vector
       - logs:/var/log:ro
